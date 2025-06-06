@@ -13,11 +13,9 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
-
 
 const connectWithRetry = () => {
   mongoose.connect(process.env.MONGO_URI)
@@ -29,11 +27,10 @@ const connectWithRetry = () => {
 };
 connectWithRetry();
 
-
 app.get('/', (req, res) => {
+  console.log("🌐 Root route hit: backend is live");
   res.send('✅ TechHaven backend is running');
 });
-
 
 app.get('/api/components', [
   query('category').optional().isString(),
@@ -48,6 +45,8 @@ app.get('/api/components', [
   const filter = category ? { category } : {};
 
   try {
+    console.log("📦 Fetching components with filter:", filter);
+
     let components;
     let total;
 
@@ -66,10 +65,10 @@ app.get('/api/components', [
 
     res.status(200).json({ success: true, page: Number(page), limit: Number(limit), total, components });
   } catch (error) {
+    console.error("❌ Failed to fetch components:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 
 app.get('/api/components/:id', async (req, res) => {
   try {
@@ -81,7 +80,6 @@ app.get('/api/components/:id', async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 
 app.post('/api/components', [
   body('name').isString().notEmpty(),
@@ -104,7 +102,6 @@ app.post('/api/components', [
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 
 app.put('/api/components/:id', [
   body('name').optional().isString().notEmpty(),
@@ -129,7 +126,6 @@ app.put('/api/components/:id', [
   }
 });
 
-
 app.delete('/api/components/:id', async (req, res) => {
   try {
     const deleted = await Component.findByIdAndDelete(req.params.id);
@@ -141,7 +137,6 @@ app.delete('/api/components/:id', async (req, res) => {
   }
 });
 
-
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -151,7 +146,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const welcomeEmailLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 mins
+  windowMs: 10 * 60 * 1000,
   max: 5,
   message: { error: 'Too many welcome email requests from this IP, try again later.' },
 });
@@ -194,10 +189,6 @@ app.post('/send-welcome', welcomeEmailLimiter, [
 
 app.use('/api/orders', orderRoutes);
 
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
-
-
-
